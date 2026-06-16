@@ -1,2 +1,4 @@
 subscriber-list.csv
 config.env
+__pycache__/
+*.pyc
