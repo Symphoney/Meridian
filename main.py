@@ -1,26 +1,12 @@
 import csv
 import sys
-import random
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
-    QComboBox,
-    QDateEdit,
-    QDateTimeEdit,
-    QDial,
-    QDoubleSpinBox,
-    QFontComboBox,
     QLabel,
-    QLCDNumber,
-    QLineEdit,
     QMainWindow,
-    QProgressBar,
-    QPushButton,
-    QRadioButton,
-    QSlider,
-    QSpinBox,
-    QTimeEdit,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -110,56 +96,72 @@ def apply_dark_palette(app: QApplication) -> None:
             background-color: #2d2d2d;
             border: 1px solid #666;
         }
+        QTableWidget {
+            background-color: #1f1f1f;
+            color: #f0f0f0;
+            border: 1px solid #555;
+            gridline-color: #3b3b3b;
+            selection-background-color: #2a82da;
+            selection-color: #ffffff;
+        }
+        QHeaderView::section {
+            background-color: #343434;
+            color: #f0f0f0;
+            border: 1px solid #555;
+            padding: 6px;
+            font-weight: 600;
+        }
         """
     )
 
 
+def read_subscribers_csv(path: str) -> tuple[list[str], list[list[str]]]:
+    with open(path, newline="", encoding="utf-8") as csvfile:
+        reader = csv.reader(csvfile)
+        rows = list(reader)
+
+    if not rows:
+        return [], []
+
+    headers = rows[0]
+    data_rows = rows[1:]
+    return headers, data_rows
+
+
 class MyWidget(QMainWindow):
-    def __init__(self):
+    def __init__(self, headers: list[str], rows: list[list[str]]):
         super().__init__()
 
-        self.setWindowTitle("Meridian")
+        self.setWindowTitle("Meridian Subscribers")
+        self.resize(1000, 640)
 
         layout = QVBoxLayout()
-        widgets = [
-            QCheckBox,
-            QComboBox,
-            QDateEdit,
-            QDateTimeEdit,
-            QDial,
-            QDoubleSpinBox,
-            QFontComboBox,
-            QLabel,
-            QLCDNumber,
-            QLineEdit,
-            QProgressBar,
-            QPushButton,
-            QRadioButton,
-            QSlider,
-            QSpinBox,
-            QTimeEdit,
-        ]
+        summary = QLabel(f"Loaded {len(rows)} subscribers")
+        layout.addWidget(summary)
 
-        for w in widgets:
-            layout.addWidget(w())
+        table = QTableWidget()
+        table.setColumnCount(len(headers))
+        table.setRowCount(len(rows))
+        table.setHorizontalHeaderLabels(headers)
+
+        for row_index, row in enumerate(rows):
+            for column_index, value in enumerate(row):
+                table.setItem(row_index, column_index, QTableWidgetItem(value))
+
+        table.resizeColumnsToContents()
+        layout.addWidget(table)
 
         widget = QWidget()
         widget.setLayout(layout)
-        
+
         self.setCentralWidget(widget)
-
-
-
-with open('subscriber-list.csv', newline='') as csvfile:
-    reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-    for row in reader:
-        print(', '.join(row))
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     apply_dark_palette(app)
-    window = MyWidget()
+    csv_headers, csv_rows = read_subscribers_csv("subscriber-list.csv")
+    window = MyWidget(csv_headers, csv_rows)
     window.show()
 
     sys.exit(app.exec())
